@@ -16,7 +16,7 @@ except metadata.PackageNotFoundError:  # pragma: no cover
     __version__ = "unknown"
 
 
-def str_to_dict(s):
+def str_to_dict_dicom(s):
     """
     Convert multi-line string of parameter/value pairs to a dictionary
 
@@ -40,6 +40,30 @@ def str_to_dict(s):
     return d
 
 
+def str_to_dict_lx(s):
+    """
+    Convert multi-line string of parameter/value pairs from LxProtocol to a dictionary
+
+    The string is of the form:
+
+        set PARAMETER1 "value1"\n    set PARAMETER2 "value2"\n
+
+    The PARAMETERs become the keys in the dictionary and each has an associated
+    value
+
+    :param s: parameter/value pairs as multi-line string
+    :type s: str
+    :return: dictionary of parameters and values
+    :rytpe: dict[str, str]
+    """
+    d = {}
+    for line in s.splitlines():
+        m = re.match(r'\s\s\s\sset\s(\w+)\s"(.*?)"', line)
+        d[m.group(1)] = m.group(2)
+
+    return d
+
+
 def extract_protocol(ds):
     """
     Extract the raw protocol block from DICOM element (0025,101b)
@@ -58,7 +82,7 @@ def extract_protocol(ds):
     protocol_raw = ds[0x25, 0x101B].value
     protocol_decoded = gzip.decompress(protocol_raw[4:]).decode()
 
-    return str_to_dict(protocol_decoded)
+    return str_to_dict_dicom(protocol_decoded)
 
 
 def diff_protocols(r, t):
@@ -74,22 +98,18 @@ def diff_protocols(r, t):
     for k, v in r.items():
         if k in t:
             if v != t[k]:
-                print(k)
-                print("<", v)
-                print(">", t[k])
+                print("<", k, v)
+                print(">", k, t[k])
                 print("---")
         else:
-            print(k)
-            print("<", v)
+            print("<", k, v)
             print(">")
             print("---")
-
     # check for items that are in t but not r
     for k, v in t.items():
         if k not in r:
-            print(k)
             print("<")
-            print(">", v)
+            print(">", k, v)
             print("---")
 
 
@@ -124,18 +144,19 @@ def main():
     )
 
     parser_diff = subparsers.add_parser(
-        "diff", help="compare protocol parameters with a second DICOM file"
+        "diff",
+        help="compare protocol parameters with a second DICOM file or LxProtocol file",
     )
 
     parser_diff.add_argument(
         "r",
-        help="reference DICOM file from GE MRI system containing protocol data block in element (0025,101b)",
+        help="reference DICOM or LxProtocol file",
         type=pathlib.Path,
     )
 
     parser_diff.add_argument(
         "t",
-        help="test DICOM file from GE MRI system containing protocol data block in element (0025,101b)",
+        help="test DICOM file",
         type=pathlib.Path,
     )
 
@@ -149,10 +170,14 @@ def main():
         with open(args.j, "w") as f:
             json.dump(extract_protocol(ds), f, indent=0)
     else:
-        ds_r = pydicom.dcmread(args.r, stop_before_pixels=True)
-        ds_t = pydicom.dcmread(args.t, stop_before_pixels=True)
+        if pydicom.misc.is_dicom(args.r):
+            ds_r = pydicom.dcmread(args.r, stop_before_pixels=True)
+            protocol_r = extract_protocol(ds_r)
+        else:
+            with open(args.r, "r") as f:
+                protocol_r = str_to_dict_lx(f.read())
 
-        protocol_r = extract_protocol(ds_r)
+        ds_t = pydicom.dcmread(args.t, stop_before_pixels=True)
         protocol_t = extract_protocol(ds_t)
 
         diff_protocols(protocol_r, protocol_t)

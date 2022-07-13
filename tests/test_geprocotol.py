@@ -20,8 +20,22 @@ SCRIPT_USAGE = f"usage: {SCRIPT_NAME} [-h] [--version]"
         ('ABC_DEF "123 456"\nDEF "456 aef"', {"ABC_DEF": "123 456", "DEF": "456 aef"}),
     ],
 )
-def test_str_to_dict(selection, expected_output):
-    assert geprotocol.str_to_dict(selection) == expected_output
+def test_str_to_dict_dicom(selection, expected_output):
+    assert geprotocol.str_to_dict_dicom(selection) == expected_output
+
+
+@pytest.mark.parametrize(
+    "selection, expected_output",
+    [
+        ('    set ABC "123"\n    set DEF "456"', {"ABC": "123", "DEF": "456"}),
+        (
+            '    set ABC_DEF "123 456"\n    set DEF "456 aef"',
+            {"ABC_DEF": "123 456", "DEF": "456 aef"},
+        ),
+    ],
+)
+def test_str_to_dict_lx(selection, expected_output):
+    assert geprotocol.str_to_dict_lx(selection) == expected_output
 
 
 @pytest.mark.parametrize(
@@ -80,7 +94,7 @@ def test_extract_protocol_missing_tag(capsys):
         (
             {1: "A", 2: "B", 3: "C"},
             {1: "AB", 2: "BC", 4: "F"},
-            "1\n< A\n> AB\n---\n2\n< B\n> BC\n---\n3\n< C\n>\n---\n4\n<\n> F\n---\n",
+            "< 1 A\n> 1 AB\n---\n< 2 B\n> 2 BC\n---\n< 3 C\n>\n---\n<\n> 4 F\n---\n",
         ),
     ],
 )
@@ -193,7 +207,7 @@ def test_geprotocol_json_error(tmp_path, script_runner):
         (
             'ABC "123"\nDEF "457"\nGHI "89"',
             'ABC "123"\nDEF "456"\nXYZ "101"',
-            "DEF\n< 457\n> 456\n---\nGHI\n< 89\n>\n---\nXYZ\n<\n> 101\n---\n",
+            "< DEF 457\n> DEF 456\n---\n< GHI 89\n>\n---\n<\n> XYZ 101\n---\n",
         ),
     ],
 )
@@ -247,5 +261,51 @@ def test_geprotocol_diff(
     ds_test.save_as(test_dcm_fp, write_like_original=False)
 
     result = script_runner.run(SCRIPT_NAME, "diff", str(ref_dcm_fp), str(test_dcm_fp))
+    assert result.success
+    assert result.stdout == expected_output
+
+
+@pytest.mark.parametrize(
+    "ref_block, test_block, expected_output",
+    [
+        ('    set ABC "123"\n    set DEF "456"', 'ABC "123"\nDEF "456"', ""),
+        (
+            '    set ABC "123"\n    set DEF "457"\n    set GHI "89"',
+            'ABC "123"\nDEF "456"\nXYZ "101"',
+            "< DEF 457\n> DEF 456\n---\n< GHI 89\n>\n---\n<\n> XYZ 101\n---\n",
+        ),
+    ],
+)
+def test_geprotocol_diff_lx(
+    ref_block, test_block, expected_output, tmp_path, script_runner
+):
+    lx_fp = tmp_path / "LxProtocol"
+    with open(lx_fp, "w") as f:
+        f.write(ref_block)
+
+    # create the 4 byte header used by GE
+    header = b"Q\x03\x00\x00"
+    test_tag_data = header + gzip.compress(test_block.encode())
+    test_dcm_fp = tmp_path / "test.dcm"
+
+    ds_test = pydicom.dataset.Dataset()
+    ds_test.StudyDate = "20220101"
+    ds_test.PatientBirthDate = "19800101"
+    ds_test.PerformedProcedureStepDescription = "MRI Head"
+    ds_test.PatientName = "SURNAME^Firstname"
+    ds_test.PatientID = "ABC12345678"
+    ds_test.add_new([0x0025, 0x101B], "UN", test_tag_data)
+    ds_test.file_meta = pydicom.dataset.FileMetaDataset()
+    ds_test.file_meta.TransferSyntaxUID = "1.2.840.10008.1.2.1"
+    ds_test.file_meta.MediaStorageSOPInstanceUID = "1.2.3.4"
+    ds_test.file_meta.ImplementationVersionName = "report"
+    ds_test.file_meta.ImplementationClassUID = "1.2.3.4"
+    ds_test.file_meta.MediaStorageSOPClassUID = "1.2.840.10008.5.1.4.1.1.4"
+    ds_test.is_implicit_VR = False
+    ds_test.is_little_endian = True
+    pydicom.dataset.validate_file_meta(ds_test.file_meta)
+    ds_test.save_as(test_dcm_fp, write_like_original=False)
+
+    result = script_runner.run(SCRIPT_NAME, "diff", str(lx_fp), str(test_dcm_fp))
     assert result.success
     assert result.stdout == expected_output
