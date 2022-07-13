@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [release-1.0.2](https://github.com/SWastling/geprotocol/tree/release-1.0.2) - 2022-07-13
+
+### Added 
+- MIT License
+
 ## [release-1.0.1](https://github.com/SWastling/geprotocol/tree/release-1.0.1) - 2022-07-13
 
 ### Added 
