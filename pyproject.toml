@@ -1,9 +1,27 @@
-[build-system]
-requires = [
-    "setuptools>=57",
-    "wheel",
-    "setuptools_scm[toml]>=6.0",
+[project]
+name = "geprotocol"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Stephen Wastling", email = "stephen.wastling@nhs.net" }
 ]
+requires-python = ">=3.13"
+dependencies = [
+    "pydicom>=3.0.1",
+]
+
+[project.scripts]
+geprotocol = "geprotocol.geprotocol:main"
+
+[build-system]
+requires = ["setuptools>=61"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools_scm]
+[dependency-groups]
+dev = [
+    "coverage>=7.6.8",
+    "pytest>=8.3.3",
+    "pytest-console-scripts>=1.4.1",
+    "ruff>=0.8.0",
+]
