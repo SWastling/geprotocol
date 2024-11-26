@@ -14,6 +14,7 @@ SCRIPT_NAME = "geprotocol"
 SCRIPT_USAGE = f"usage: {SCRIPT_NAME} [-h] [--version]"
 __version__ = importlib.metadata.version("geprotocol")
 
+
 @pytest.mark.parametrize(
     "selection, expected_output",
     [
@@ -47,7 +48,6 @@ def test_str_to_dict_lx(selection, expected_output):
     ],
 )
 def test_extract_protocol_1(selection, expected_output):
-
     # create the 4 byte header used by GE
     header = b"Q\x03\x00\x00"
 
@@ -65,7 +65,6 @@ def test_extract_protocol_1(selection, expected_output):
 
 
 def test_extract_protocol_missing_tag(capsys):
-
     ds = pydicom.dataset.Dataset()
     ds.StudyDate = "20220101"
     ds.PatientBirthDate = "19800101"
@@ -77,7 +76,7 @@ def test_extract_protocol_missing_tag(capsys):
     with pytest.raises(SystemExit) as pytest_wrapped_e:
         geprotocol.extract_protocol(ds)
 
-    assert pytest_wrapped_e.type == SystemExit
+    assert pytest_wrapped_e.type is SystemExit
     assert pytest_wrapped_e.value.code == 1
 
     captured = capsys.readouterr()
@@ -100,7 +99,6 @@ def test_extract_protocol_missing_tag(capsys):
     ],
 )
 def test_diff_protocols(ref_dict, test_dict, expected_output, capsys):
-
     geprotocol.diff_protocols(ref_dict, test_dict)
     captured = capsys.readouterr()
     assert captured.out == expected_output
@@ -139,7 +137,6 @@ def test_prints_version(script_runner):
     ],
 )
 def test_geprotocol_json(selection, expected_output, tmp_path, script_runner):
-
     # create the 4 byte header used by GE
     header = b"Q\x03\x00\x00"
 
@@ -179,7 +176,6 @@ def test_geprotocol_json(selection, expected_output, tmp_path, script_runner):
 
 
 def test_geprotocol_json_error(tmp_path, script_runner):
-
     test_dcm_fp = tmp_path / "test.dcm"
     ds = pydicom.dataset.Dataset()
     ds.StudyDate = "20220101"
@@ -222,7 +218,6 @@ def test_geprotocol_json_error(tmp_path, script_runner):
 def test_geprotocol_diff(
     ref_block, test_block, expected_output, tmp_path, script_runner
 ):
-
     # create the 4 byte header used by GE
     header = b"Q\x03\x00\x00"
 
