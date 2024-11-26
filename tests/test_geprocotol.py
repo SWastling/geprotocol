@@ -1,4 +1,5 @@
 import gzip
+import importlib.metadata
 import json
 import pathlib
 
@@ -11,7 +12,7 @@ THIS_DIR = pathlib.Path(__file__).resolve().parent
 
 SCRIPT_NAME = "geprotocol"
 SCRIPT_USAGE = f"usage: {SCRIPT_NAME} [-h] [--version]"
-
+__version__ = importlib.metadata.version("geprotocol")
 
 @pytest.mark.parametrize(
     "selection, expected_output",
@@ -106,21 +107,28 @@ def test_diff_protocols(ref_dict, test_dict, expected_output, capsys):
 
 
 def test_prints_help_1(script_runner):
-    result = script_runner.run(SCRIPT_NAME)
+    result = script_runner.run([SCRIPT_NAME])
     assert result.success
     assert result.stdout.startswith(SCRIPT_USAGE)
 
 
 def test_prints_help_2(script_runner):
-    result = script_runner.run(SCRIPT_NAME, "-h")
+    result = script_runner.run([SCRIPT_NAME, "-h"])
     assert result.success
     assert result.stdout.startswith(SCRIPT_USAGE)
 
 
 def test_prints_help_for_invalid_option(script_runner):
-    result = script_runner.run(SCRIPT_NAME, "-!")
+    result = script_runner.run([SCRIPT_NAME, "-!"])
     assert not result.success
     assert result.stderr.startswith(SCRIPT_USAGE)
+
+
+def test_prints_version(script_runner):
+    result = script_runner.run([SCRIPT_NAME, "--version"])
+    assert result.success
+    expected_version_output = SCRIPT_NAME + " " + __version__ + "\n"
+    assert result.stdout == expected_version_output
 
 
 @pytest.mark.parametrize(
@@ -158,7 +166,7 @@ def test_geprotocol_json(selection, expected_output, tmp_path, script_runner):
 
     protocol_json = tmp_path / "protocol_dump.json"
     result = script_runner.run(
-        SCRIPT_NAME, "json", str(test_dcm_fp), str(protocol_json)
+        [SCRIPT_NAME, "json", str(test_dcm_fp), str(protocol_json)]
     )
     assert result.success
 
@@ -192,7 +200,7 @@ def test_geprotocol_json_error(tmp_path, script_runner):
 
     protocol_json = tmp_path / "protocol_dump.json"
     result = script_runner.run(
-        SCRIPT_NAME, "json", str(test_dcm_fp), str(protocol_json)
+        [SCRIPT_NAME, "json", str(test_dcm_fp), str(protocol_json)]
     )
     assert not result.success
     assert result.stderr.startswith(
@@ -260,7 +268,7 @@ def test_geprotocol_diff(
     pydicom.dataset.validate_file_meta(ds_test.file_meta)
     ds_test.save_as(test_dcm_fp, write_like_original=False)
 
-    result = script_runner.run(SCRIPT_NAME, "diff", str(ref_dcm_fp), str(test_dcm_fp))
+    result = script_runner.run([SCRIPT_NAME, "diff", str(ref_dcm_fp), str(test_dcm_fp)])
     assert result.success
     assert result.stdout == expected_output
 
@@ -306,6 +314,6 @@ def test_geprotocol_diff_lx(
     pydicom.dataset.validate_file_meta(ds_test.file_meta)
     ds_test.save_as(test_dcm_fp, write_like_original=False)
 
-    result = script_runner.run(SCRIPT_NAME, "diff", str(lx_fp), str(test_dcm_fp))
+    result = script_runner.run([SCRIPT_NAME, "diff", str(lx_fp), str(test_dcm_fp)])
     assert result.success
     assert result.stdout == expected_output
