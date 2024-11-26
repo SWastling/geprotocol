@@ -52,35 +52,25 @@ between reference and test files is shown as described below:
     ```
  
 ## Installing
-1. Create a directory to store the package e.g.:
+1. Create a new virtual environment in which to install `geprotocol`:
 
     ```bash
-    mkdir geprotocol
-    ```
-
-2. Create a new virtual environment in which to install `geprotocol`:
-
-    ```bash
-    python3 -m venv geprotocol-env
+    uv venv geprotocol-venv
     ```
    
-3. Activate the virtual environment:
+2. Activate the virtual environment:
 
     ```bash
-    source geprotocol-env/bin/activate
+    source geprotocol-venv/bin/activate
     ```
 
-4. Upgrade `pip` and `build`:
-
+4. Install using `uv pip`:
     ```bash
-    pip install --upgrade pip
-    pip install --upgrade build
+    uv pip install git+https://github.com/SWastling/geprotocol.git
     ```
-
-5. Install using `pip`:
-    ```bash
-    pip install git+https://github.com/SWastling/geprotocol.git
-    ```
+   
+> [!TIP]
+> You can also run `geprotocol` without installing it using [uvx](https://docs.astral.sh/uv/guides/tools/) i.e. with the command `uvx --from  git+https://github.com/SWastling/geprotocol.git geprotocol`
 
 ## License
 See [MIT license](./LICENSE)
