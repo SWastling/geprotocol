@@ -7,13 +7,11 @@ import pathlib
 import re
 import sys
 
-import importlib_metadata as metadata
+import importlib.metadata
 import pydicom
 
-try:
-    __version__ = metadata.version("geprotocol")
-except metadata.PackageNotFoundError:  # pragma: no cover
-    __version__ = "unknown"
+
+__version__ = importlib.metadata.version("geprotocol")
 
 
 def str_to_dict_dicom(s):
