@@ -156,10 +156,10 @@ def test_geprotocol_json(selection, expected_output, tmp_path, script_runner):
     ds.file_meta.ImplementationVersionName = "report"
     ds.file_meta.ImplementationClassUID = "1.2.3.4"
     ds.file_meta.MediaStorageSOPClassUID = "1.2.840.10008.5.1.4.1.1.4"
-    ds.is_implicit_VR = False
-    ds.is_little_endian = True
     pydicom.dataset.validate_file_meta(ds.file_meta)
-    ds.save_as(test_dcm_fp, write_like_original=False)
+    ds.save_as(
+        test_dcm_fp, implicit_vr=False, little_endian=True, enforce_file_format=True
+    )
 
     protocol_json = tmp_path / "protocol_dump.json"
     result = script_runner.run(
@@ -189,10 +189,10 @@ def test_geprotocol_json_error(tmp_path, script_runner):
     ds.file_meta.ImplementationVersionName = "report"
     ds.file_meta.ImplementationClassUID = "1.2.3.4"
     ds.file_meta.MediaStorageSOPClassUID = "1.2.840.10008.5.1.4.1.1.4"
-    ds.is_implicit_VR = False
-    ds.is_little_endian = True
     pydicom.dataset.validate_file_meta(ds.file_meta)
-    ds.save_as(test_dcm_fp, write_like_original=False)
+    ds.save_as(
+        test_dcm_fp, implicit_vr=False, little_endian=True, enforce_file_format=True
+    )
 
     protocol_json = tmp_path / "protocol_dump.json"
     result = script_runner.run(
@@ -240,10 +240,10 @@ def test_geprotocol_diff(
     ds_ref.file_meta.ImplementationVersionName = "report"
     ds_ref.file_meta.ImplementationClassUID = "1.2.3.4"
     ds_ref.file_meta.MediaStorageSOPClassUID = "1.2.840.10008.5.1.4.1.1.4"
-    ds_ref.is_implicit_VR = False
-    ds_ref.is_little_endian = True
     pydicom.dataset.validate_file_meta(ds_ref.file_meta)
-    ds_ref.save_as(ref_dcm_fp, write_like_original=False)
+    ds_ref.save_as(
+        ref_dcm_fp, implicit_vr=False, little_endian=True, enforce_file_format=True
+    )
 
     ds_test = pydicom.dataset.Dataset()
     ds_test.StudyDate = "20220101"
@@ -258,10 +258,10 @@ def test_geprotocol_diff(
     ds_test.file_meta.ImplementationVersionName = "report"
     ds_test.file_meta.ImplementationClassUID = "1.2.3.4"
     ds_test.file_meta.MediaStorageSOPClassUID = "1.2.840.10008.5.1.4.1.1.4"
-    ds_test.is_implicit_VR = False
-    ds_test.is_little_endian = True
     pydicom.dataset.validate_file_meta(ds_test.file_meta)
-    ds_test.save_as(test_dcm_fp, write_like_original=False)
+    ds_test.save_as(
+        test_dcm_fp, implicit_vr=False, little_endian=True, enforce_file_format=True
+    )
 
     result = script_runner.run([SCRIPT_NAME, "diff", str(ref_dcm_fp), str(test_dcm_fp)])
     assert result.success
@@ -304,10 +304,10 @@ def test_geprotocol_diff_lx(
     ds_test.file_meta.ImplementationVersionName = "report"
     ds_test.file_meta.ImplementationClassUID = "1.2.3.4"
     ds_test.file_meta.MediaStorageSOPClassUID = "1.2.840.10008.5.1.4.1.1.4"
-    ds_test.is_implicit_VR = False
-    ds_test.is_little_endian = True
     pydicom.dataset.validate_file_meta(ds_test.file_meta)
-    ds_test.save_as(test_dcm_fp, write_like_original=False)
+    ds_test.save_as(
+        test_dcm_fp, implicit_vr=False, little_endian=True, enforce_file_format=True
+    )
 
     result = script_runner.run([SCRIPT_NAME, "diff", str(lx_fp), str(test_dcm_fp)])
     assert result.success
